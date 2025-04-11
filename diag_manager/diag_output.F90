@@ -42,7 +42,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & get_domainUG, get_diag_axis_name
   USE diag_data_mod, ONLY: pack_size, diag_fieldtype, diag_global_att_type, CMOR_MISSING_VALUE, diag_atttype, files
   USE time_manager_mod, ONLY: get_calendar_type, valid_calendar_types
-  USE fms_mod, ONLY: error_mesg, mpp_pe, write_version_number, fms_error_handler, FATAL, note
+  USE fms_mod, ONLY: error_mesg, write_version_number, fms_error_handler, FATAL, note
 
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR

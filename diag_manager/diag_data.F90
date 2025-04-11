@@ -335,6 +335,7 @@ use platform_mod
                                    !! routine is called with the optional time_init parameter.
   LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
   LOGICAL :: use_refactored_send = .false. !< Namelist flag to use refactored send_data math funcitons.
+  LOGICAL :: auto_merge_nc = .false. !< Namelist flag to automatically merge netCDF files.
 
   ! <!-- netCDF variable -->
 
