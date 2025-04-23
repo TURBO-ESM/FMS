@@ -702,7 +702,12 @@ subroutine append_to_filepath_list(filepath, filepath_list)
     call string_copy(filepath_list%path, trim(filepath))
   else
     current => filepath_list
-    do while (associated(current%next))
+    do
+      ! If file is already in the list, return. This happens when new_file_freq (e.g., daily) 
+      ! is more frequent than the date suffix (e.g., %4yr-%2mo), leading to overriding the file.
+      if (string_compare(current%path, trim(filepath))) return
+      ! If we reach the end of the list, exit the loop to add the new file.
+      if (.not. associated(current%next)) exit
       current => current%next
     enddo
     allocate(current%next)
