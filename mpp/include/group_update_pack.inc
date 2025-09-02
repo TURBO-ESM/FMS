@@ -32,6 +32,8 @@ if( group%k_loop_inside ) then
         case(ZERO)
            do l=1, group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+              !$omp target teams distribute parallel do collapse(3) private(idx) &
+              !$omp   map(to: field(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*(je-js+1)*(ie-is+1))) if(use_device_ptr)
               do k = 1, ksize
                  do j = js, je
                     do i = is, ie
@@ -83,6 +85,8 @@ if( group%k_loop_inside ) then
         case(ZERO)
            do l=1, nvector  ! loop over number of fields
               ptr_fieldx = group%addrs_x(l)
+              !$omp target teams distribute parallel do collapse(3) private(idx) &
+              !$omp   map(to: fieldx(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*(je-js+1)*(ie-is+1))) if(use_device_ptr)
               do k = 1, ksize
                  do j = js, je
                     do i = is, ie
@@ -162,6 +166,8 @@ if( group%k_loop_inside ) then
         case(ZERO)
            do l=1, nvector  ! loop over number of fields
               ptr_fieldy = group%addrs_y(l)
+              !$omp target teams distribute parallel do collapse(3) private(idx) &
+              !$omp   map(to: fieldy(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*(je-js+1)*(ie-is+1))) if(use_device_ptr)
               do k = 1, ksize
                  do j = js, je
                     do i = is, ie
