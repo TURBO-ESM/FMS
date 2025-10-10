@@ -430,7 +430,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   integer   :: msgsize
   integer   :: from_pe, to_pe, buffer_pos, pos
   integer   :: ksize, is, ie, js, je
-  integer   :: n, l, m, i, j, k, buffer_start_pos, nk
+  integer   :: n, l, m, i, j, k, buffer_start_pos, ni, nj, nk
   integer   :: shift, gridtype, midpoint
   integer   :: npack, nunpack, rotation, isd
 
@@ -476,6 +476,9 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
 
   !---pre-post receive.
   call mpp_clock_begin(group_recv_clock)
+#ifdef __NVCOMPILER
+  !$omp target enter data map(alloc: buffer) if(use_device_ptr)
+#endif
   do m = 1, nrecv
      msgsize = group%recv_size(m)
      from_pe = group%from_pe(m)
@@ -519,6 +522,9 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   nunpack = group%nunpack
   call mpp_clock_begin(group_unpk_clock)
 #include <group_update_unpack.inc>
+#ifdef __NVCOMPILER
+  !$omp target exit data map(release: buffer) if(use_device_ptr)
+#endif
   call mpp_clock_end(group_unpk_clock)
 
   ! ---northern boundary fold
@@ -646,7 +652,7 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   integer   :: msgsize, npack, rotation
   integer   :: from_pe, to_pe, buffer_pos, pos
   integer   :: ksize, is, ie, js, je
-  integer   :: n, l, m, i, j, k, buffer_start_pos, nk
+  integer   :: n, l, m, i, j, k, buffer_start_pos, ni, nj, nk
   logical   :: reuse_buf_pos
   character(len=8)            :: text
 
@@ -752,7 +758,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   integer   :: k, buffer_pos, pos, m, n, l
   integer   :: is, ie, js, je, ksize, i, j
   integer   :: shift, gridtype, midpoint, flags_v
-  integer   :: nunpack, rotation, buffer_start_pos, nk, isd
+  integer   :: nunpack, rotation, buffer_start_pos, ni, nj, nk, isd
   logical   :: recv_y(8)
   MPP_TYPE_ :: buffer(size(mpp_domains_stack_nonblock(:)))
   MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
