@@ -52,7 +52,7 @@ program test_diag_update_buffer
 
    !!Diag_manager::send_data uses CLASS(*) in function signature, SO
    !! we mimic the resulting operations. The set of ClASS(*) data needs to be allocated of same
-   !! type in order to be able to call the math/buffer update funtions.
+   !! type in order to be able to call the math/buffer update functions.
    CLASS(*), ALLOCATABLE, TARGET, DIMENSION(:,:,:,:) :: field_data
    CLASS(*), ALLOCATABLE, TARGET, DIMENSION(:,:,:,:) :: rmask
    CLASS(*), ALLOCATABLE, TARGET :: missvalue
@@ -258,7 +258,7 @@ program test_diag_update_buffer
 
 CONTAINS
 
-   !> @brief Initialized an fms_diag_outfield_index_type by calling member funtion of
+   !> @brief Initialized an fms_diag_outfield_index_type by calling member function of
    !! fms_diag_outfield_index_type input object.
    SUBROUTINE init_ofield_index_cfg(idx_cfg, is, js , ks, ie, je, ke, hi, hj, f1, f2, f3, f4)
       type(fmsDiagOutfieldIndex_type), INTENT(inout)  :: idx_cfg !< The object to initialize.
@@ -282,12 +282,12 @@ CONTAINS
          DO k = 1, NZ
             DO j = 1, NY
                DO i = 1, NX
+                  itemp = get_array_index_from_4D(i,j,k,l,NX,NY,NZ)
                   SELECT TYPE ( field)
                    TYPE IS (real(kind=r4_kind))
-                     itemp = get_array_index_from_4D(i,j,k,l,NX,NY,NZ)
-                     field(i,j,k,l) = get_array_index_from_4D(i,j,k,l,NX,NY,NZ)
-1                  TYPE IS (integer(kind=i8_kind))
-                     field(i,j,k,l) = get_array_index_from_4D(i,j,k,l,NX,NY,NZ)
+                     field(i,j,k,l) = real(itemp, kind=r4_kind)
+                   TYPE IS (integer(kind=i8_kind))
+                     field(i,j,k,l) = int(itemp, kind=i8_kind)
                   END SELECT
                END DO
             END DO

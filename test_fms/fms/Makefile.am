@@ -23,7 +23,7 @@
 # uramirez, Ed Hartnett
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/test_fms/fms/include -I$(MODDIR)
 
 # Link to the FMS library.
 LDADD = $(top_builddir)/libFMS/libFMS.la
@@ -32,7 +32,12 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 check_PROGRAMS = test_fms
 
 # These are the sources for the tests.
-test_fms_SOURCES = test_fmsC.c test_fms.F90
+test_fms_SOURCES = \
+  test_fmsC.c \
+  test_fms.F90 \
+  include/test_fms.inc \
+  include/test_fms_r4.fh \
+  include/test_fms_r8.fh
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
@@ -44,7 +49,7 @@ TESTS = test_fms2.sh
 # These will also be included in the distribution.
 EXTRA_DIST = test_fms2.sh
 
-CLEANFILES = input.nml logfile.*.out *.mod *.o *.dpi *.spi *.dyn *.spl
+CLEANFILES = input.nml *.out *.mod *.o *.dpi *.spi *.dyn *.spl
 
 clean-local:
 	rm -rf RESTART

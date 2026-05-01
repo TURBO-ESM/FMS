@@ -22,8 +22,8 @@
 !> @addtogroup mpp_domains_mod
 !> @{
 
-    !> Gets a global field from a local field
-    !! local field may be on compute OR data domain
+    !> Gets a local ad field from a global field
+    !! global field may be on compute OR data domain
     subroutine MPP_DO_GLOBAL_FIELD_3D_AD_( domain, local, global, tile, ishift, jshift, flags, default_data)
       type(domain2D), intent(in)    :: domain
       MPP_TYPE_, intent(inout)         ::  local(:,:,:)
@@ -109,8 +109,8 @@
       else if( size(local,1).EQ.(domain%x(tile)%memory%size+ishift) .AND. size(local, &
              & 2).EQ.(domain%y(tile)%memory%size+jshift) )then
          !local is on data domain
-         ioff = -domain%x(tile)%data%begin + 1
-         joff = -domain%y(tile)%data%begin + 1
+         ioff = -domain%x(tile)%domain_data%begin + 1
+         joff = -domain%y(tile)%domain_data%begin + 1
       else
          call mpp_error( FATAL, &
               & 'MPP_GLOBAL_FIELD_: incoming field array must match either compute domain or memory domain.')

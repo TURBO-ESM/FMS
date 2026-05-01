@@ -31,16 +31,6 @@
 # Create and enter output directory
 output_dir
 
-# use smaller arrays if system stack size is limited
-if [ $STACK_LIMITED ]; then
-  cat <<_EOF > input.nml
-&test_fms2_io_nml
-  nx = 32
-  ny = 32
-  nz = 10
-/
-_EOF
-fi
 touch input.nml
 
 # run the tests
@@ -115,6 +105,12 @@ cat <<_EOF > mask_table
 _EOF
 test_expect_success "Domain Read Write Tests with a ocean mask" '
   mpirun -n 17 ../test_domain_io
+'
+
+rm input.nml
+touch input.nml
+test_expect_success "Write and read domain-decomposed data with generalized indices" '
+  mpirun -n 16 ../test_generalized_indices
 '
 
 test_done

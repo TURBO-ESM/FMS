@@ -96,7 +96,7 @@ module fms_mod
 !
 !  uppercase           Convert character strings to all upper case
 !
-!  monotonic_array     Determines if the real input array has
+!  monotonic_array     Determines if the real input array has strictly
 !                      monotonically increasing or decreasing values.
 !
 !  string_array_index  Match the input character string to a string
@@ -143,25 +143,11 @@ use  mpp_domains_mod, only:  domain2D, mpp_define_domains, &
                              mpp_get_compute_domain, mpp_get_global_domain, &
                              mpp_get_data_domain
 
-use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
-                       MPP_ASCII, MPP_NATIVE, MPP_IEEE32, MPP_NETCDF,  &
-                       MPP_RDONLY, MPP_WRONLY, MPP_APPEND, MPP_OVERWR, &
-                       MPP_SEQUENTIAL, MPP_DIRECT,                     &
-                       MPP_SINGLE, MPP_MULTI, MPP_DELETE, mpp_io_exit, &
-                       fieldtype, mpp_get_atts, mpp_get_info, mpp_get_fields, &
-                       do_cf_compliance
-
-use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
-                       read_data, write_data, read_compressed, read_distributed, &
-                       open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
-                       get_domain_decomp, &
-                       open_file, open_direct_file, get_mosaic_tile_grid, &
-                       get_mosaic_tile_file, get_global_att_value, file_exist, field_exist, &
-                       set_domain, nullify_domain
 use fms2_io_mod, only: fms2_io_init
 use memutils_mod, only: print_memuse_stats, memutils_init
 use grid2_mod, only: grid_init, grid_end
 use fms_string_utils_mod, only: fms_c2f_string, fms_cstring2cpointer, string
+use platform_mod, only: r4_kind, r8_kind
 
 use, intrinsic :: iso_c_binding
 
@@ -171,29 +157,14 @@ private
 ! routines for initialization and termination of module
 public :: fms_init, fms_end
 
-! routines for opening/closing specific types of file
-public :: open_namelist_file, open_restart_file, &
-          open_ieee32_file, close_file, &
-          open_file, open_direct_file
+public ::check_nml_error, error_mesg, fms_error_handler
 
-! routines for reading/writing distributed data
-public :: read_data, write_data, read_compressed, read_distributed
-public :: get_domain_decomp, field_size
-public :: get_global_att_value
-
-! routines for get mosaic information
-public :: get_mosaic_tile_grid, get_mosaic_tile_file
-
-! miscellaneous i/o routines
-public :: file_exist, check_nml_error, field_exist,     &
-          error_mesg, fms_error_handler
 ! version logging routine (originally from fms_io)
 public :: write_version_number
 
 ! miscellaneous utilities (non i/o)
 public :: lowercase, uppercase,        &
-          string_array_index, monotonic_array, &
-          set_domain, nullify_domain
+          string_array_index, monotonic_array
 
 ! public mpp interfaces
 public :: mpp_error, NOTE, WARNING, FATAL, &
@@ -211,8 +182,9 @@ public :: fms_c2f_string, fms_cstring2cpointer
 !public from the old fms_io but not exists here
 public :: string
 
-! public mpp-io interfaces
-public :: do_cf_compliance
+interface monotonic_array
+  module procedure :: monotonic_array_r4, monotonic_array_r8
+end interface monotonic_array
 
 !Balaji
 !this is published by fms and applied to any initialized clocks
@@ -287,9 +259,6 @@ integer, public :: clock_flag_default
 
   logical :: module_is_initialized = .FALSE.
 
-  logical, private :: fms_io_initialized = .FALSE.!> used to make sure fms_io version is only
-                                                  !! written to log once
-
 !> @}
 
 !> @addtogroup fms_mod
@@ -318,7 +287,10 @@ subroutine fms_init (localcomm, alt_input_nml_path)
 
 !--- needed to output the version number of constants_mod to the logfile ---
  use constants_mod, only: constants_version=>version !pjp: PI not computed
- use fms_io_mod,    only: fms_io_version
+ interface
+    subroutine maximize_system_stacksize_limit() bind(C)
+    end subroutine
+ end interface
 
  integer, intent(in), optional :: localcomm
  character(len=*), intent(in), optional :: alt_input_nml_path
@@ -328,6 +300,10 @@ subroutine fms_init (localcomm, alt_input_nml_path)
 
     if (module_is_initialized) return    ! return silently if already called
     module_is_initialized = .true.
+
+!---- Raise the system stack size limit to its maximum permissible value ----
+    call maximize_system_stacksize_limit
+
 !---- initialize mpp routines ----
     if(present(localcomm)) then
        if(present(alt_input_nml_path)) then
@@ -343,13 +319,13 @@ subroutine fms_init (localcomm, alt_input_nml_path)
        endif
     endif
     call mpp_domains_init()
-    call fms_io_init()
-    !! write_version_number is inaccesible from fms_io_mod so write it from here if not written
-    if(.not.fms_io_initialized) then
-      call write_version_number("FMS_IO_MOD", fms_io_version)
-      fms_io_initialized = .true.
-    endif
     call fms2_io_init()
+#ifdef use_deprecated_io
+      call mpp_error(NOTE, "fms_io_init: fms_io HAS BEEN DEPRECATED! "//&
+                           "PLEASE REMOVE -Duse_deprecated_io FROM YOUR COMPILE FLAGS "// &
+                           "AND MOVE TO FMS2_IO. CONTACT YOUR MODEL LIASISON IF YOU NEED "// &
+                           "ASSISTANCE")
+#endif
     logunitnum = stdlog()
 !---- read namelist input ----
 
@@ -441,7 +417,6 @@ subroutine fms_end ( )
     if (.not.module_is_initialized) return  ! return silently
 !    call fms_io_exit  ! now called from coupler_end
     call grid_end
-    call mpp_io_exit
     call mpp_domains_exit
     call mpp_exit
     module_is_initialized =.FALSE.
@@ -721,51 +696,6 @@ integer :: i
 end function string_array_index
 
 !#######################################################################
-
-!> @brief Determines if a real input array has monotonically increasing or
-!!     decreasing values.
-!! @return If the input array of real values either increases or decreases monotonically then true
-!! is returned, otherwise false is returned.
-function monotonic_array ( array, direction )
-real,    intent(in)            :: array(:) !< An array of real values. If the size(array) < 2 this function
-                                           !! assumes the array is not monotonic, no fatal error will occur.
-integer, intent(out), optional :: direction !< If the input array is:
-                                            !! >> monotonic (small to large) then direction = +1.
-                                            !! >> monotonic (large to small) then direction = -1.
-                                            !! >> not monotonic then direction = 0.
-logical :: monotonic_array !< If the input array of real values either increases or decreases monotonically
-                           !! then TRUE is returned, otherwise FALSE is returned.
-integer :: i
-
-! initialize
-  monotonic_array = .false.
-  if (present(direction)) direction = 0
-
-! array too short
-  if ( size(array(:)) < 2 ) return
-
-! ascending
-  if ( array(1) < array(size(array(:))) ) then
-     do i = 2, size(array(:))
-       if (array(i-1) < array(i)) cycle
-       return
-     enddo
-     monotonic_array = .true.
-     if (present(direction)) direction = +1
-
-! descending
-  else
-     do i = 2, size(array(:))
-       if (array(i-1) > array(i)) cycle
-       return
-     enddo
-     monotonic_array = .true.
-     if (present(direction)) direction = -1
-  endif
-
-end function monotonic_array
-
-!#######################################################################
 !> @brief Prints to the log file (or a specified unit) the version id string and
 !!  tag name.
 subroutine write_version_number (version, tag, unit)
@@ -793,6 +723,9 @@ subroutine write_version_number (version, tag, unit)
   endif
 
 end subroutine write_version_number
+
+#include "fms_r4.fh"
+#include "fms_r8.fh"
 
 end module fms_mod
 ! <INFO>

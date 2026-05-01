@@ -2,9 +2,9 @@
 
 Thank you for taking time to contribute.
 
-libFMS is a software framework for supporting the efficient development,
+libFMS is a software framework for supporting the **seamless** development,
 construction, execution, and scientific interpretation of atmospheric, oceanic,
-and climate system models.
+and land models across timescales.
 
 Contributions to this project are released to the public under the
 [projects open source license](LICENSE.md).
@@ -94,9 +94,36 @@ long-term, portability, and the scope of the impact on the code base. Therefore,
 Modeling Systems does not guarantee that all pull requests will be accepted,
 even if the changes pass the initial testing phases, and are otherwise correct.
 
+## Reviewing Pull Requests
+
+When reviewing a pull request, members of MSD should look for the following:
+
+- Design
+  - Does the code change belong in the FMS library or does it better belong elsewhere such as a component repository or the FMScoupler?
+  - Could existing routines/modules be utilized to reduce redundancy?
+  - Temporary changes/fixes meant to be removed should be avoided whenever possible
+- Functionality
+  - Does this PR do what is intended (and stated)
+  - Are the changes good for both end-users and developers?
+  - Will the code change impact existing end-users needlessly?
+- Complexity
+  - Are the changes easily understood by the reader / reviewer?
+- Testing
+  - Code changes should include a test program or a modification to a test program to ensure the code is covered by the test suite
+- Comments
+  - Inline comments for complex code segments or intricacies to make the purpose of the code reasonably clear
+- Style and Consistency
+  - Code should follow the syle guide in general, but should also be consistent to the file the change is made in
+- Documentation
+  - If a PR changes the behaviour or instructions, accompanying documentation should also change
+- Thoroughness
+  - Reviews should be done line by line, and the surrounding context/file should be taken into account
+
+Comments on pull requests should be courteous and constructive, giving useful feedback and explanations for why changes should be made. See the [code of conduct](CODE_OF_CONDUCT.md) for more information.
+
 ## Tests
 
-FMS uses TravisCI and gitlab-CI to run build tests for libFMS.  Users may create
+FMS uses github actons to run build tests for libFMS.  Users should create
 unit tests, code coverage tests, and regression tests for new and existing code
 in yaml (.yml) files.  Github provides a guide
 (https://help.github.com/en/articles/about-continuous-integration) for
@@ -111,7 +138,8 @@ Code updates should follow the coding style for the project, contained in
 Releases will be tagged using the format `yyyy.rr[.pp]`, where `yyyy` is the
 4-digit year, `rr` is the 2-digit release number, and `pp` is the 2-digit patch
 number.  Preliminary releases mean for testing (i.e., code that is still under
-development) will be marked `yyyy.rr.alpha.pp` or `yyyy.rr.beta.pp`. Alpha tags
+development) will be marked `yyyy.rr-alpha#` or `yyyy.rr-beta#` where `#` is
+the incremented number of the testing tag. Alpha tags
 mark code updates that are intended for developers to include in their baseline
 regression tests to determine whether the code contains bugs not encountered
 during baseline testing. Beta tags are intended for a wider audience of

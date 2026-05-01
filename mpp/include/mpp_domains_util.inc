@@ -63,8 +63,8 @@
 
     mpp_domain1D_eq = ( a%compute%begin.EQ.b%compute%begin .AND. &
          a%compute%end  .EQ.b%compute%end   .AND. &
-         a%data%begin   .EQ.b%data%begin    .AND. &
-         a%data%end     .EQ.b%data%end      .AND. &
+         a%domain_data%begin   .EQ.b%domain_data%begin    .AND. &
+         a%domain_data%end     .EQ.b%domain_data%end      .AND. &
          a%global%begin .EQ.b%global%begin  .AND. &
          a%global%end   .EQ.b%global%end    )
     !compare pelists
@@ -140,11 +140,11 @@
     integer, intent(out), optional :: begin, end, size, max_size
     logical, intent(out), optional :: is_global
 
-    if( PRESENT(begin)     )begin     = domain%data%begin
-    if( PRESENT(end)       )end       = domain%data%end
-    if( PRESENT(size)      )size      = domain%data%size
-    if( PRESENT(max_size)  )max_size  = domain%data%max_size
-    if( PRESENT(is_global) )is_global = domain%data%is_global
+    if( PRESENT(begin)     )begin     = domain%domain_data%begin
+    if( PRESENT(end)       )end       = domain%domain_data%end
+    if( PRESENT(size)      )size      = domain%domain_data%size
+    if( PRESENT(max_size)  )max_size  = domain%domain_data%max_size
+    if( PRESENT(is_global) )is_global = domain%domain_data%is_global
     return
   end subroutine mpp_get_data_domain1D
 
@@ -320,8 +320,16 @@
         call mpp_set_super_grid_indices(domain%list(i-1)%y(1)%compute)
 
         !< There is no data domain in domain%list
-        !call mpp_set_super_grid_indices(domain%list(i-1)%x(1)%data)
-        !call mpp_set_super_grid_indices(domain%list(i-1)%y(1)%data)
+        !call mpp_set_super_grid_indices(domain%list(i-1)%x(1)%domain_data)
+        !call mpp_set_super_grid_indices(domain%list(i-1)%y(1)%domain_data)
+    enddo
+
+    do i=1, size(domain%x(1)%list)
+        call mpp_set_super_grid_indices(domain%x(1)%list(i-1)%compute)
+    enddo
+
+    do i=1, size(domain%y(1)%list)
+        call mpp_set_super_grid_indices(domain%y(1)%list(i-1)%compute)
     enddo
 
     do i=1, size(domain%x(1)%list)
@@ -370,10 +378,10 @@
     integer, intent(in), optional :: begin, end, size
     logical, intent(in), optional :: is_global
 
-    if(present(begin)) domain%data%begin = begin
-    if(present(end))   domain%data%end   = end
-    if(present(size))  domain%data%size  = size
-    if(present(is_global)) domain%data%is_global = is_global
+    if(present(begin)) domain%domain_data%begin = begin
+    if(present(end))   domain%domain_data%end   = end
+    if(present(size))  domain%domain_data%size  = size
+    if(present(is_global)) domain%domain_data%is_global = is_global
 
   end subroutine mpp_set_data_domain1D
 
@@ -688,6 +696,25 @@ function mpp_get_domain_tile_root_pe(domain)
    mpp_get_domain_tile_root_pe = domain%tile_root_pe
 
 end function mpp_get_domain_tile_root_pe
+
+
+function mpp_get_domain_tile_commid(domain)
+   type(domain2d), intent(in) :: domain                     !> domain you are querying for information
+   integer                    :: mpp_get_domain_tile_commid !> declaration of the return tile communicator
+
+   mpp_get_domain_tile_commid = domain%tile_comm_id
+
+end function mpp_get_domain_tile_commid
+
+
+function mpp_get_domain_commid(domain)
+   type(domain2d), intent(in) :: domain                !> domain you are querying for information
+   integer                    :: mpp_get_domain_commid !> declaration of the return domain communicator
+
+   mpp_get_domain_commid = domain%comm_id
+
+end function mpp_get_domain_commid
+
 
 function mpp_get_io_domain(domain)
    type(domain2d), intent(in) :: domain
@@ -1728,7 +1755,7 @@ end subroutine mpp_get_tile_compute_domains
      integer                       :: ending   !< Ending bounds
 
      domain_out%compute = domain_in%compute
-     domain_out%data    = domain_in%data
+     domain_out%domain_data    = domain_in%domain_data
      domain_out%global  = domain_in%global
      domain_out%memory  = domain_in%memory
      domain_out%cyclic  = domain_in%cyclic
@@ -1738,6 +1765,7 @@ end subroutine mpp_get_tile_compute_domains
      if (associated(domain_in%list)) then
          starting = lbound(domain_in%list, 1)
          ending = ubound(domain_in%list, 1)
+         if (associated(domain_out%list)) deallocate(domain_out%list) !< Check if allocated
          allocate(domain_out%list(starting:ending))
 
          do i = starting, ending
@@ -1843,6 +1871,7 @@ end subroutine mpp_get_tile_compute_domains
       starting = lbound(domain2D_spec_in%tile_id,1)
       ending = ubound(domain2D_spec_in%tile_id,1)
 
+      if (associated(domain2D_spec_out%tile_id)) deallocate(domain2D_spec_out%tile_id) !< Check if allocated
       allocate(domain2D_spec_out%tile_id(starting:ending))
       domain2D_spec_out%tile_id = domain2D_spec_in%tile_id
   endif
@@ -1851,6 +1880,7 @@ end subroutine mpp_get_tile_compute_domains
       starting = lbound(domain2D_spec_in%x,1)
       ending = ubound(domain2D_spec_in%x,1)
 
+      if (associated(domain2D_spec_out%x)) deallocate(domain2D_spec_out%x) !< Check if allocated
       allocate(domain2D_spec_out%x(starting:ending))
       do i = starting, ending
          call mpp_copy_domain1D_spec(domain2D_spec_in%x(i), domain2D_spec_out%x(i))
@@ -1861,6 +1891,7 @@ end subroutine mpp_get_tile_compute_domains
       starting = lbound(domain2D_spec_in%y,1)
       ending = ubound(domain2D_spec_in%y,1)
 
+      if (associated(domain2D_spec_out%y)) deallocate(domain2D_spec_out%y) !< Check if allocated
       allocate(domain2D_spec_out%y(starting:ending))
       do i = starting, ending
          call mpp_copy_domain1D_spec(domain2D_spec_in%y(i), domain2D_spec_out%y(i))

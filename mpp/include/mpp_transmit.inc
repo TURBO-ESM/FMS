@@ -171,7 +171,7 @@
       call mpp_transmit( put_data, put_len, to_pe, dummy, 1, NULL_PE, tag=tag, send_request=request )
     end subroutine MPP_SEND_
 
-    subroutine MPP_RECV_SCALAR_( get_data, from_pe, glen, block, tag, request )
+    subroutine MPP_RECV_SCALAR_( get_data, from_pe, glen, block, tag, request, omp_offload )
 !a mpp_transmit with null arguments on the put side
       integer, intent(in) :: from_pe
       MPP_TYPE_, intent(out) :: get_data
@@ -180,6 +180,7 @@
       integer, intent(out), optional :: request
 
       integer, optional, intent(in) :: glen
+      logical, optional, intent(in) :: omp_offload
       integer                       :: get_len
       MPP_TYPE_ :: get_data1D(1)
       MPP_TYPE_ :: dummy(1)
@@ -189,17 +190,19 @@
 
       ptr = LOC(get_data)
       get_len=1; if(PRESENT(glen))get_len=glen
-      call mpp_transmit( dummy, 1, NULL_PE, get_data1D, get_len, from_pe, block, tag, recv_request=request )
+      call mpp_transmit( dummy, 1, NULL_PE, get_data1D, get_len, from_pe, &
+          block, tag, recv_request=request, omp_offload=omp_offload )
 
     end subroutine MPP_RECV_SCALAR_
 
-    subroutine MPP_SEND_SCALAR_( put_data, to_pe, plen, tag, request)
+    subroutine MPP_SEND_SCALAR_( put_data, to_pe, plen, tag, request, omp_offload)
 !a mpp_transmit with null arguments on the get side
       integer, intent(in) :: to_pe
       MPP_TYPE_, intent(in) :: put_data
       integer, optional, intent(in) :: plen
       integer, intent(in), optional :: tag
       integer, intent(out), optional :: request
+      logical, optional, intent(in) :: omp_offload
       integer                       :: put_len
       MPP_TYPE_ :: put_data1D(1)
       MPP_TYPE_ :: dummy(1)
@@ -207,7 +210,8 @@
       pointer( ptr, put_data1D )
       ptr = LOC(put_data)
       put_len=1; if(PRESENT(plen))put_len=plen
-      call mpp_transmit( put_data1D, put_len, to_pe, dummy, 1, NULL_PE, tag = tag, send_request=request )
+      call mpp_transmit( put_data1D, put_len, to_pe, dummy, 1, NULL_PE, &
+          tag=tag, send_request=request, omp_offload=omp_offload )
 
     end subroutine MPP_SEND_SCALAR_
 
@@ -220,7 +224,8 @@
       integer, intent(out), optional :: request
 
       MPP_TYPE_ :: dummy(1,1)
-      call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, block, tag, recv_request=request )
+      call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, &
+          block, tag, recv_request=request )
     end subroutine MPP_RECV_2D_
 
     subroutine MPP_SEND_2D_( put_data, put_len, to_pe, tag, request )
@@ -305,79 +310,79 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    subroutine MPP_BROADCAST_SCALAR_( data, from_pe, pelist )
-      MPP_TYPE_, intent(inout) :: data
+    subroutine MPP_BROADCAST_SCALAR_( broadcast_data, from_pe, pelist )
+      MPP_TYPE_, intent(inout) :: broadcast_data
       integer, intent(in) :: from_pe
       integer, intent(in), optional :: pelist(:)
       MPP_TYPE_ :: data1D(1)
 
       pointer( ptr, data1D )
 
-      ptr = LOC(data)
+      ptr = LOC(broadcast_data)
       call MPP_BROADCAST_( data1D, 1, from_pe, pelist )
 
       return
     end subroutine MPP_BROADCAST_SCALAR_
 
-    subroutine MPP_BROADCAST_2D_( data, length, from_pe, pelist )
+    subroutine MPP_BROADCAST_2D_( broadcast_data, length, from_pe, pelist )
 !this call was originally bundled in with mpp_transmit, but that doesn't allow
 !broadcast to a subset of PEs. This version will, and mpp_transmit will remain
 !backward compatible.
-      MPP_TYPE_, intent(inout) :: data(:,:)
+      MPP_TYPE_, intent(inout) :: broadcast_data(:,:)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
       MPP_TYPE_ :: data1D(length)
 
       pointer( ptr, data1D )
-      ptr = LOC(data)
+      ptr = LOC(broadcast_data)
       call mpp_broadcast( data1D, length, from_pe, pelist )
 
       return
     end subroutine MPP_BROADCAST_2D_
 
-    subroutine MPP_BROADCAST_3D_( data, length, from_pe, pelist )
+    subroutine MPP_BROADCAST_3D_( broadcast_data, length, from_pe, pelist )
 !this call was originally bundled in with mpp_transmit, but that doesn't allow
 !broadcast to a subset of PEs. This version will, and mpp_transmit will remain
 !backward compatible.
-      MPP_TYPE_, intent(inout) :: data(:,:,:)
+      MPP_TYPE_, intent(inout) :: broadcast_data(:,:,:)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
       MPP_TYPE_ :: data1D(length)
 
       pointer( ptr, data1D )
-      ptr = LOC(data)
+      ptr = LOC(broadcast_data)
       call mpp_broadcast( data1D, length, from_pe, pelist )
 
       return
    end subroutine MPP_BROADCAST_3D_
 
-    subroutine MPP_BROADCAST_4D_( data, length, from_pe, pelist )
+    subroutine MPP_BROADCAST_4D_( broadcast_data, length, from_pe, pelist )
 !this call was originally bundled in with mpp_transmit, but that doesn't allow
 !broadcast to a subset of PEs. This version will, and mpp_transmit will remain
 !backward compatible.
-      MPP_TYPE_, intent(inout) :: data(:,:,:,:)
+      MPP_TYPE_, intent(inout) :: broadcast_data(:,:,:,:)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
       MPP_TYPE_ :: data1D(length)
 
       pointer( ptr, data1D )
-      ptr = LOC(data)
+      ptr = LOC(broadcast_data)
       call mpp_broadcast( data1D, length, from_pe, pelist )
 
       return
     end subroutine MPP_BROADCAST_4D_
 
-    subroutine MPP_BROADCAST_5D_( data, length, from_pe, pelist )
+    subroutine MPP_BROADCAST_5D_( broadcast_data, length, from_pe, pelist )
 !this call was originally bundled in with mpp_transmit, but that doesn't allow
 !broadcast to a subset of PEs. This version will, and mpp_transmit will remain
 !backward compatible.
-      MPP_TYPE_, intent(inout) :: data(:,:,:,:,:)
+      MPP_TYPE_, intent(inout) :: broadcast_data(:,:,:,:,:)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
       MPP_TYPE_ :: data1D(length)
 
       pointer( ptr, data1D )
-      ptr = LOC(data)
+      ptr = LOC(broadcast_data)
       call mpp_broadcast( data1D, length, from_pe, pelist )
 
       return

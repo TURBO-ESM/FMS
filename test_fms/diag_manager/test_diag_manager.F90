@@ -223,15 +223,13 @@ PROGRAM test
   ! Because of this, the calls to all of those routines differ depending on the test.
 
   USE mpp_mod, ONLY: mpp_pe, mpp_root_pe, mpp_debug, mpp_set_stack_size
-  USE mpp_io_mod, ONLY: mpp_io_init
   USE mpp_domains_mod, ONLY: domain2d, mpp_define_domains, mpp_get_compute_domain
   USE mpp_domains_mod, ONLY: mpp_define_io_domain, mpp_define_layout
   USE mpp_domains_mod, ONLY: mpp_domains_init, mpp_domains_set_stack_size
-  USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, file_exist, check_nml_error, open_file
+  USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, check_nml_error
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdlog, stdout
+  USE fms2_io_mod, only: set_filename_appendix
   USE mpp_mod, ONLY: input_nml_file
-  USE fms_io_mod, ONLY: fms_io_init
-  USE fms_io_mod, ONLY: fms_io_exit, set_filename_appendix
   USE constants_mod, ONLY: constants_init, PI, RAD_TO_DEG
 
   USE time_manager_mod, ONLY: time_type, set_calendar_type, set_date, decrement_date, OPERATOR(+), set_time
@@ -289,7 +287,7 @@ PROGRAM test
   ! Variables needed for test 22
   INTEGER :: id_nv, id_nv_init
 
-!!!!!! Stuff for unstrctured grid
+!!!!!! Stuff for unstructured grid
     integer(kind=i4_kind)              :: nx = 8                               !<Total number of grid points in the
                                                                                !! x-dimension (longitude?)
     integer(kind=i4_kind)              :: ny = 8           !<Total number of grid points in the y-dimension (latitude?)
@@ -372,16 +370,6 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
     else
         call mpp_domains_init()
     endif
-
-   !Initialize the mpp_io module.
-    if (debug) then
-        call mpp_io_init(MPP_DEBUG)
-    else
-        call mpp_io_init()
-    endif
-
-   !Initialize the fms_io module.
-    call fms_io_init()
 
    !Set the mpp and mpp_domains stack sizes.
     call mpp_set_stack_size(stackmax)
@@ -1002,7 +990,6 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
   CALL diag_manager_end(Time)
 END SELECT ! End of case handling opened for test 12.
 
-  CALL fms_io_exit
   CALL fms_end
 
 CONTAINS

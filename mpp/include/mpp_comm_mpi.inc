@@ -31,6 +31,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !> @brief Initialize the @ref mpp_mod module. Must be called before any usage.
   subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
+  !$ use omp_lib
   integer, optional, intent(in) :: flags !< Flags for debug output, can be MPP_VERBOSE or MPP_DEBUG
   integer, optional, intent(in) :: localcomm !< Id of MPI communicator used to initialize
   integer, optional, intent(in) :: test_level !< Used to exit initialization at certain stages
@@ -53,6 +54,14 @@
   endif
   call MPI_COMM_RANK( mpp_comm_private, pe,   error )
   call MPI_COMM_SIZE( mpp_comm_private, npes, error )
+
+  ! set default device to enable multi GPU parallelism
+  ! calls to both OpenACC and OpenMP runtimes are needed
+  ! because we use both do-concurrent and openmp
+  ! if you remove either, the code will run multiple
+  ! ranks on a _single_ GPU. Be careful out there!
+  !$ call omp_set_default_device(pe)
+  !$acc set device_num(pe)
 
   module_is_initialized = .TRUE.
   if (present(test_level)) then
@@ -111,6 +120,7 @@
   if (t_level == 3) return
 
   call mpp_init_logfile()
+  call mpp_init_warninglog()
   if (present(alt_input_nml_path)) then
      call read_input_nml(alt_input_nml_path=alt_input_nml_path)
   else
@@ -205,6 +215,7 @@ subroutine mpp_exit()
 
      call mpp_sync()
      call FLUSH( out_unit )
+     close(warn_unit)
 
      if( pe.EQ.root_pe )then
         write( out_unit,'(/a,i6,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
@@ -319,13 +330,13 @@ end subroutine mpp_exit
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !> Broadcasts a character string from the given pe to it's pelist
-    subroutine mpp_broadcast_char(data, length, from_pe, pelist )
-      character(len=*), intent(inout) :: data(:) !< Character string to send
+    subroutine mpp_broadcast_char(char_data, length, from_pe, pelist )
+      character(len=*), intent(inout) :: char_data(:) !< Character string to send
       integer, intent(in) :: length  !< length of given data to broadcast
       integer, intent(in) :: from_pe !< pe to broadcast from
       integer, intent(in), optional :: pelist(:) !< optional pelist to broadcast to
       integer :: n, i, from_rank
-      character    :: str1D(length*size(data(:)))
+      character    :: str1D(length*size(char_data(:)))
       pointer(lptr, str1D)
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'mpp_broadcast_text: You must first call mpp_init.' )
@@ -351,8 +362,9 @@ end subroutine mpp_exit
              exit
          endif
       enddo
-      lptr = LOC (data)
-      if( mpp_npes().GT.1 ) call MPI_BCAST( data, length*size(data(:)), MPI_CHARACTER, from_rank, peset(n)%id, error )
+      lptr = LOC (char_data)
+      if( mpp_npes().GT.1 ) call MPI_BCAST( char_data, length*size(char_data(:)), &
+         MPI_CHARACTER, from_rank, peset(n)%id, error )
       if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_BROADCAST, length )
       return
     end subroutine mpp_broadcast_char
@@ -408,12 +420,21 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_real8_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_real8_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_real8
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_real8
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_real8
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
+
+
+
 #include <mpp_transmit_mpi.fh>
 
 #ifdef OVERLOAD_C8
@@ -465,6 +486,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_cmplx8_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_cmplx8_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_complx8
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_complx8
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_complx8
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(c8_kind)
 #undef MPP_TYPE_BYTELEN_
@@ -522,6 +549,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_real4_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_real4_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_real4
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_real4
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_real4
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r4_kind)
 #undef MPP_TYPE_BYTELEN_
@@ -579,6 +612,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_cmplx4_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_cmplx4_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_cmplx4
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_cmplx4
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_cmplx4
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(c4_kind)
 #undef MPP_TYPE_BYTELEN_
@@ -638,6 +677,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_int8_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_int8_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_int8
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_int8
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_int8
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i8_kind)
 #undef MPP_TYPE_BYTELEN_
@@ -694,6 +739,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_int4_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_int4_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_int4
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_int4
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_int4
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i4_kind)
 #undef MPP_TYPE_BYTELEN_
@@ -752,6 +803,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_logical8_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_logical8_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_logical8
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_logical8
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_logical8
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(l8_kind)
 #undef MPP_TYPE_BYTELEN_
@@ -808,6 +865,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_logical4_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_logical4_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_logical4
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_logical4
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_logical4
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(l4_kind)
 #undef MPP_TYPE_BYTELEN_
