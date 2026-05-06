@@ -30,9 +30,10 @@ real(R8),   public, parameter :: KAPPA  = RDGAS/CP_AIR             !< RDGAS / CP
 real(R8),   public, parameter :: RHO0R   = 1.0_r8/RHO0             !< Reciprocal of average density of sea water [m^3/kg]
 real(R8),   public, parameter :: RHO_CP  = RHO0*CP_OCEAN           !< (kg/m^3)*(cal/kg/deg C)(joules/cal) =
                                                                    !<(joules/m^3/deg C) [J/m^3/deg]
-real(R8),   public, parameter :: ES0 = 1.0_r8                      !< Humidity factor. Controls the humidity content of the
-                                                                   !< atmosphere through the Saturation Vapour Pressure
-                                                                   !< expression when using DO_SIMPLE. [dimensionless]
+real(R8),   public, parameter :: ES0 = 1.0_r8                      !< Humidity factor. Controls the humidity content of
+                                                                   !! the atmosphere through the Saturation Vapour
+                                                                   !! Pressure expression when using DO_SIMPLE.
+                                                                   !! [dimensionless]
 real(R8),   public, parameter :: HLS = HLV + HLF                   !< Latent heat of sublimation [J/kg]
 real(R8),   public, parameter :: WTMOZONE =  47.99820_r8           !< Molecular weight of ozone [AMU]
 real(R8),   public, parameter :: WTMC     =  12.00000_r8           !< Molecular weight of carbon [AMU]
