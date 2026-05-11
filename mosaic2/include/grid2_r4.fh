@@ -1,0 +1,58 @@
+!***********************************************************************
+!*                             Apache License 2.0
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
+!***********************************************************************
+!> @file
+!> @brief include file for grid2_mod to generate subroutines/functions for r4_kind arguments
+
+!> @addtogroup grid2_mod
+!> @{
+
+#undef  FMS_MOS_KIND_
+#define FMS_MOS_KIND_ r4_kind
+
+#undef  GET_GRID_CELL_AREA_SG_
+#define GET_GRID_CELL_AREA_SG_ get_grid_cell_area_SG_r4
+
+#undef  GET_GRID_COMP_AREA_SG_
+#define GET_GRID_COMP_AREA_SG_ get_grid_comp_area_SG_r4
+
+#undef  GET_GRID_CELL_AREA_UG_
+#define GET_GRID_CELL_AREA_UG_ get_grid_cell_area_UG_r4
+
+#undef  GET_GRID_COMP_AREA_UG_
+#define GET_GRID_COMP_AREA_UG_ get_grid_comp_area_UG_r4
+
+#undef  GET_GRID_CELL_VERTICES_1D_
+#define GET_GRID_CELL_VERTICES_1D_ get_grid_cell_vertices_1D_r4
+
+#undef  GET_GRID_CELL_VERTICES_2D_
+#define GET_GRID_CELL_VERTICES_2D_ get_grid_cell_vertices_2D_r4
+
+#undef  GET_GRID_CELL_VERTICES_UG_
+#define GET_GRID_CELL_VERTICES_UG_ get_grid_cell_vertices_UG_r4
+
+#undef  GET_GRID_CELL_CENTERS_1D_
+#define GET_GRID_CELL_CENTERS_1D_ get_grid_cell_centers_1D_r4
+
+#undef  GET_GRID_CELL_CENTERS_2D_
+#define GET_GRID_CELL_CENTERS_2D_ get_grid_cell_centers_2D_r4
+
+#undef  GET_GRID_CELL_CENTERS_UG_
+#define GET_GRID_CELL_CENTERS_UG_ get_grid_cell_centers_UG_r4
+
+#include "grid2.inc"
+!> @}
