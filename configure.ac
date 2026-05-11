@@ -1,19 +1,20 @@
 #***********************************************************************
-#*                             Apache License 2.0
+#*                   GNU Lesser General Public License
 #*
 #* This file is part of the GFDL Flexible Modeling System (FMS).
 #*
-#* Licensed under the Apache License, Version 2.0 (the "License");
-#* you may not use this file except in compliance with the License.
-#* You may obtain a copy of the License at
-#*
-#*     http://www.apache.org/licenses/LICENSE-2.0
+#* FMS is free software: you can redistribute it and/or modify it under
+#* the terms of the GNU Lesser General Public License as published by
+#* the Free Software Foundation, either version 3 of the License, or (at
+#* your option) any later version.
 #*
 #* FMS is distributed in the hope that it will be useful, but WITHOUT
-#* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
-#* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-#* PARTICULAR PURPOSE. See the License for the specific language
-#* governing permissions and limitations under the License.
+#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#* for more details.
+#*
+#* You should have received a copy of the GNU Lesser General Public
+#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
 # This is the main configure file for the FMS package.
@@ -24,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2026.01.01-dev],
+  [2023.01.01],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -53,6 +54,12 @@ AS_IF([test x${CRAYPE_VERSION:+yes} = "xyes"],[
 
 
 # Process user optons.
+AC_ARG_ENABLE([mixed-mode],
+  [AS_HELP_STRING([--enable-mixed-mode],
+    [Build using mixed mode.  Enables both 64-bit and 32-bit reals in Fortran. This option will be ignored if --disable-fortran-flag-setting is also given.])])
+AS_IF([test ${enable_mixed_mode:-no} = no],
+  [enable_mixed_mode=no],
+  [enable_mixed_mode=yes])
 AC_ARG_WITH([mpi],
   [AS_HELP_STRING([--with-mpi],
     [Build with MPI support.  This option will be ignored if --disable-fortran-flag-setting is also given. (Default yes)])])
@@ -78,6 +85,12 @@ AS_IF([test ${enable_code_coverage:-no} = no],
   [enable_code_coverage=no],
   [enable_code_coverage=yes])
 # individual mixed precision overload macros
+AC_ARG_ENABLE([overload-r4],
+  [AS_HELP_STRING([--enable-overload-r4],
+    [Enables the OVERLOAD_R4 macro to compile with 4 byte real routine overloads. (Default no)])])
+AS_IF([test ${enable_overload_r4:-no} = yes],
+  [enable_overload_r4=yes],
+  [enable_overload_r4=no])
 AC_ARG_ENABLE([overload-c4],
   [AS_HELP_STRING([--enable-overload-c4],
     [Enables the OVERLOAD_C4 macro to compile with 4 byte complex routine overloads. (Default no)])])
@@ -96,20 +109,6 @@ AC_ARG_ENABLE([8byte-int],
 AS_IF([test ${enable_8byte_int:-no} = yes],
   [enable_8byte_int=yes],
   [enable_8byte_int=no])
-
-AC_ARG_ENABLE([r8-default],
-  [AS_HELP_STRING([--disable-r8-default],
-    [Disables the build from adding the 8 byte default real kind flag during compilation (default no)])])
-AS_IF([test ${enable_r8_default:-yes} = yes],
-  [enable_r8_default=yes],
-  [enable_r8_default=no])
-
-AC_ARG_ENABLE([portable-kinds],
-  [AS_HELP_STRING([--enable-portable-kinds],
-    [Enables compilation with -DPORTABLE_KINDS with iso_c_binding KIND type parameters])])
-AS_IF([test ${enable_portable_kinds:-no} = yes],
-  [enable_portable_kinds=yes],
-  [enable_portable_kinds=no])
 
 # user enabled testing with input files
 AC_MSG_CHECKING([whether to enable tests with input files])
@@ -190,9 +189,9 @@ if test $with_yaml = yes; then
   #If the test pass, define use_yaml macro
   AC_DEFINE([use_yaml], [1], [This is required to use yaml parser])
 
-  AM_CONDITIONAL([USING_YAML], true)
+  AM_CONDITIONAL([SKIP_PARSER_TESTS], false )
 else
-  AM_CONDITIONAL([USING_YAML], false)
+  AM_CONDITIONAL([SKIP_PARSER_TESTS], true )
 fi
 
 # Require netCDF
@@ -226,21 +225,6 @@ AC_CHECK_FUNCS([sched_getaffinity], [], [])
 
 # Check if the compiler needs special OpenMP flags
 AC_OPENMP()
-
-# Check if building with OpenACC support.  Default is 'no'
-AC_ARG_ENABLE([openacc],
-  [AS_HELP_STRING([--enable-openacc],
-    [Builds with support for OpenACC directives. (default no)])])
-AS_IF([test ${enable_openacc:-no} = yes],
-  [enable_openacc=yes],
-  [enable_openacc=no])
-
-# If openacc support enabled, test for correct flags
-AS_IF([test ${enable_openacc} = yes],
-      [ACX_LANG_OPENACC_FLAG(
-				[AS_VAR_APPEND([CFLAGS], [" $acx_cv_c_openacc_flag"])], []
-			 )])
-
 AC_LANG_POP(C)
 
 # Fortran specific checks
@@ -304,17 +288,11 @@ GX_FC_CRAY_POINTER_FLAG()
 # Check if Fortran compiler and system have quad precision support
 GX_FC_QUAD_PRECISION()
 
+# Check if Fortran compiler supports reading namelists from internal files
+GX_FC_INTERNAL_FILE_NML()
+
 # Check if the compiler needs special OpenMP flags
 AC_OPENMP()
-
-# need to set preprocessor for openacc check below
-AC_FC_PP_SRCEXT([F90])
-
-# Check for openacc fortran flags
-AS_IF([test ${enable_openacc} = yes],
-      [ACX_LANG_OPENACC_FLAG(
-				[AS_VAR_APPEND([FCFLAGS], [" $acx_cv_fc_openacc_flag"])], []
-			 )])
 
 AC_LANG_POP(Fortran)
 
@@ -323,11 +301,11 @@ if test $with_mpi = yes; then
   AC_DEFINE([use_libMPI], [1], [This is required for the library to build])
 fi
 
-# Builds with r8 default unless disable flag is given
+# builds with r8 default unless disable flag is given
 if test $enable_r8_default = yes; then
-  AM_CONDITIONAL([SKIP_MOSAIC_TESTS], false)
+  am_conditional([skip_mosaic_tests], false)
 else
-  AM_CONDITIONAL([SKIP_MOSAIC_TESTS], true)
+  am_conditional([skip_mosaic_tests], true)
 fi
 
 # Set any required compile flags.  This will not be done if the user wants to
@@ -346,8 +324,10 @@ if test $enable_setting_flags = yes; then
     GX_FC_DEFAULT_REAL_KIND8_FLAG([dnl
       FCFLAGS="$FCFLAGS $FC_DEFAULT_REAL_KIND8_FLAG"])
   fi
-
   # individual mixed precision overloads
+  if test $enable_overload_r4 = yes; then
+    AC_DEFINE([OVERLOAD_R4], [1], [Set to overload with the R4 Fortran routines])
+  fi
   if test $enable_overload_c4 = yes; then
     AC_DEFINE([OVERLOAD_C4], [1], [Set to overload with the C4 Fortran routines])
   fi
@@ -392,12 +372,9 @@ fi
 AC_CHECK_PROGS([MPI_LAUNCHER],[srun aprun mpirun])
 
 # Check if the launcher can oversubscribe the MPI processes
-AS_IF([$MPI_LAUNCHER --oversubscribe nproc >/dev/null 2>&1], \
+AS_IF([$MPI_LAUNCHER --oversubscribe hostname >/dev/null 2>&1], \
       [ AC_SUBST([OVERSUBSCRIBE], [--oversubscribe])])
 
-# newer openmpi versions take a different flag
-AS_IF([$MPI_LAUNCHER --map-by :OVERSUBSCRIBE nproc >/dev/null 2>&1], \
-      [ AC_SUBST([OVERSUBSCRIBE], [--map-by :OVERSUBSCRIBE])])
 
 # Compiler with version information. This consists of the full path
 # name of the compiler and the reported version number.
@@ -449,32 +426,6 @@ else
   AC_MSG_RESULT([no])
 fi
 
-# Check if intel is 2025.1 for ICE
-AC_MSG_CHECKING([if using Intel 2025.1])
-if [ test -n "`$FC --version | grep ifx | grep 2025\.1\..*`" ]; then
-  AC_MSG_RESULT([yes])
-  AC_MSG_ERROR([Compilation with Oneapi 2025.1 is unsupported \
-by this version of FMS due to a bug in the compiler. Please use a different version of oneapi.])
-else
-  AC_MSG_RESULT([no])
-fi
-
-AC_MSG_CHECKING([if netCDF was built with HDF5 parallel I/O features])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[
-#include <netcdf_meta.h>
-#if !defined(NC_HAS_PARALLEL4) || NC_HAS_PARALLEL4 == 0
-      choke me
-#endif]])], [nc_has_parallel4=yes], [nc_has_parallel4=no])
-AC_MSG_RESULT([$nc_has_parallel4])
-
-if test $nc_has_parallel4 = no; then
-  AC_MSG_WARN(netCDF was not build with HDF5 parallel I/O features, so collective netcdf io is not allowed)
-  AC_DEFINE([NO_NC_PARALLEL4], [1], [HDF5 parallel I/O features not allowed])
-  AM_CONDITIONAL([SKIP_PARALLEL_TEST], true)
-else
-  AM_CONDITIONAL([SKIP_PARALLEL_TEST], false)
-fi
-
 #####
 # Create output variables from various
 # shell variables, for use in generating
@@ -494,10 +445,6 @@ AC_SUBST([NOUNDEFINED])
 # Used in Makefiles.
 AC_SUBST([MODDIR],[\$\(top_builddir\)/.mods])
 
-# Define CMake variables used in test-lib.sh.in as empty strings
-AC_SUBST([CMAKE_CURRENT_SOURCE_DIR], [])
-AC_SUBST([USING_CMAKE],[])
-
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([
   Makefile
@@ -514,7 +461,7 @@ AC_CONFIG_FILES([
   tridiagonal/Makefile
   tracer_manager/Makefile
   topography/Makefile
-  grid_utils/Makefile
+  mosaic/Makefile
   mosaic2/Makefile
   monin_obukhov/Makefile
   memutils/Makefile
@@ -533,7 +480,6 @@ AC_CONFIG_FILES([
   diag_integral/Makefile
   sat_vapor_pres/Makefile
   random_numbers/Makefile
-  offloading/Makefile
   libFMS/Makefile
   docs/Makefile
   parser/Makefile
@@ -541,8 +487,6 @@ AC_CONFIG_FILES([
   test_fms/test-lib.sh
   test_fms/intel_coverage.sh
   test_fms/Makefile
-  test_fms/common/Makefile
-  test_fms/astronomy/Makefile
   test_fms/diag_manager/Makefile
   test_fms/data_override/Makefile
   test_fms/exchange/Makefile
@@ -552,25 +496,17 @@ AC_CONFIG_FILES([
   test_fms/fms2_io/Makefile
   test_fms/fms/Makefile
   test_fms/mpp/Makefile
+  test_fms/mpp_io/Makefile
   test_fms/time_interp/Makefile
   test_fms/time_manager/Makefile
   test_fms/horiz_interp/Makefile
   test_fms/field_manager/Makefile
   test_fms/axis_utils/Makefile
-  test_fms/mosaic2/Makefile
+  test_fms/mosaic/Makefile
   test_fms/affinity/Makefile
   test_fms/coupler/Makefile
   test_fms/parser/Makefile
   test_fms/string_utils/Makefile
-  test_fms/tridiagonal/Makefile
-  test_fms/sat_vapor_pres/Makefile
-  test_fms/diag_integral/Makefile
-  test_fms/tracer_manager/Makefile
-  test_fms/random_numbers/Makefile
-  test_fms/topography/Makefile
-  test_fms/column_diagnostics/Makefile
-  test_fms/offloading/Makefile
-  test_fms/block_control/Makefile
   FMS.pc
   ])
 
