@@ -45,9 +45,10 @@ jobs:
     - name: checkout
       uses: actions/checkout@v2
     - name: Configure
-      run: autoreconf -if ./configure.ac
-           export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
-           ./configure
+      run: |
+        autoreconf -if ./configure.ac
+        export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
+        ./configure
     - name: Compile
       run: make -j || make
     - name: Run test suite
