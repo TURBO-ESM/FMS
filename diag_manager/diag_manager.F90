@@ -242,9 +242,7 @@ use platform_mod
   use netcdf_io_mod, ONLY: filepath_list_type, partitioned_global_files, partitioned_section_files, &
    & append_to_filepath_list
 
-#ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
-#endif
 
 !----------
 !ug support

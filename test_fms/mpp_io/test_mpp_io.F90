@@ -35,12 +35,10 @@ program test
   use mpp_mod,         only : input_nml_file
   use fms_mod,         only : check_nml_error
 
-#ifdef use_netCDF
   use netcdf
   use netcdf_nf_data
   use netcdf_nf_interfaces
   use netcdf4_nf_interfaces
-#endif
 
   implicit none
 

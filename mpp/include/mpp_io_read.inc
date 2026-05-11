@@ -1282,7 +1282,6 @@
 
       tavg_info_exists = .false.
 
-#ifdef use_netCDF
       do n= 1, field%natt
          if (field%Att(n)%type .EQ. NF_CHAR) then
              if (field%Att(n)%name(1:13) == 'time_avg_info') then
@@ -1291,7 +1290,6 @@
              endif
          endif
       enddo
-#endif
       if (tavg_info_exists) then
           do n = 1, size(fields(:))
              if (trim(fields(n)%name) == 'average_T1') then

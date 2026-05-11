@@ -828,9 +828,7 @@
       if( mpp_file(unit)%fileset.NE.MPP_MULTI )collect = .FALSE.
       if( mpp_file(unit)%opened) then
          if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
-#ifdef use_netCDF
             error = NF_CLOSE(mpp_file(unit)%ncid); call netcdf_err( error, mpp_file(unit) )
-#endif
          else
             close(unit,status=status)
          end if

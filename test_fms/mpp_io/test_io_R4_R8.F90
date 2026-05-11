@@ -41,9 +41,7 @@ program test_io_R4_R8
 
   implicit none
 
-#ifdef use_netCDF
 #include <netcdf.inc>
-#endif
 
   !--- namelist definition
   integer           :: nx=360, ny=200, nz=50, nt=2

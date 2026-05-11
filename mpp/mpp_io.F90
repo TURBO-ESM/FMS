@@ -312,12 +312,10 @@ module mpp_io_mod
 
 #define _MAX_FILE_UNITS 1024
 
-#ifdef use_netCDF
 use netcdf
 use netcdf_nf_data
 use netcdf_nf_interfaces
 use netcdf4_nf_interfaces
-#endif
 
 use mpp_parameter_mod,  only : MPP_WRONLY, MPP_RDONLY, MPP_APPEND, MPP_OVERWR, MPP_ASCII
 use mpp_parameter_mod,  only : MPP_IEEE32, MPP_NATIVE, MPP_NETCDF, MPP_SEQUENTIAL
