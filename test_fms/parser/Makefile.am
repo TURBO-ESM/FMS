@@ -49,11 +49,7 @@ TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(abs_top_srcdir)/test_fms/tap-driver.sh
 
-if SKIP_PARSER_TESTS
-skipflag="skip"
-else
 skipflag=""
-endif
 
 TESTS_ENVIRONMENT = parser_skip=${skipflag}
 # Clean up
