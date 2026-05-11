@@ -54,12 +54,6 @@ AS_IF([test x${CRAYPE_VERSION:+yes} = "xyes"],[
 
 
 # Process user optons.
-AC_ARG_ENABLE([mixed-mode],
-  [AS_HELP_STRING([--enable-mixed-mode],
-    [Build using mixed mode.  Enables both 64-bit and 32-bit reals in Fortran. This option will be ignored if --disable-fortran-flag-setting is also given.])])
-AS_IF([test ${enable_mixed_mode:-no} = no],
-  [enable_mixed_mode=no],
-  [enable_mixed_mode=yes])
 AC_ARG_WITH([mpi],
   [AS_HELP_STRING([--with-mpi],
     [Build with MPI support.  This option will be ignored if --disable-fortran-flag-setting is also given. (Default yes)])])
@@ -109,6 +103,13 @@ AC_ARG_ENABLE([8byte-int],
 AS_IF([test ${enable_8byte_int:-no} = yes],
   [enable_8byte_int=yes],
   [enable_8byte_int=no])
+
+AC_ARG_ENABLE([r8-default],
+  [AS_HELP_STRING([--disable-r8-default],
+    [Disables the build from adding the 8 byte default real kind flag during compilation (default no)])])
+AS_IF([test ${enable_r8_default:-yes} = yes],
+  [enable_r8_default=yes],
+  [enable_r8_default=no])
 
 # user enabled testing with input files
 AC_MSG_CHECKING([whether to enable tests with input files])
