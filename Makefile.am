@@ -46,7 +46,6 @@ SUBDIRS = \
   fms \
   parser \
   affinity \
-  mosaic \
   time_manager \
   axis_utils \
   diag_manager \

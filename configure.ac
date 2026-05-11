@@ -457,7 +457,6 @@ AC_CONFIG_FILES([
   tridiagonal/Makefile
   tracer_manager/Makefile
   topography/Makefile
-  mosaic/Makefile
   mosaic2/Makefile
   monin_obukhov/Makefile
   memutils/Makefile
@@ -498,7 +497,6 @@ AC_CONFIG_FILES([
   test_fms/horiz_interp/Makefile
   test_fms/field_manager/Makefile
   test_fms/axis_utils/Makefile
-  test_fms/mosaic/Makefile
   test_fms/affinity/Makefile
   test_fms/coupler/Makefile
   test_fms/parser/Makefile
