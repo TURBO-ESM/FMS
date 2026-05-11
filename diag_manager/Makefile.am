@@ -33,6 +33,7 @@ noinst_LTLIBRARIES = libdiag_manager.la
 libdiag_manager_la_SOURCES = \
   diag_axis.F90 \
   diag_data.F90 \
+  mppnccombine.c \
   diag_grid.F90 \
   diag_manager.F90 \
   diag_output.F90 \
