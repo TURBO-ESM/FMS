@@ -41,7 +41,7 @@ void handle_netcdf_error(const char *msg, int status )
 {
   char errmsg[512];
 
-  sprintf( errmsg, "%s: %s", msg, (char *)nc_strerror(status) );
+  sprintf( errmsg, "%s: %d", msg, status );
   error_handler(errmsg);
 
 } /* handle_netcdf_error */
