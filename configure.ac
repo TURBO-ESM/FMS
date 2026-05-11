@@ -304,13 +304,6 @@ if test $with_mpi = yes; then
   AC_DEFINE([use_libMPI], [1], [This is required for the library to build])
 fi
 
-# builds with r8 default unless disable flag is given
-if test $enable_r8_default = yes; then
-  am_conditional([skip_mosaic_tests], false)
-else
-  am_conditional([skip_mosaic_tests], true)
-fi
-
 # Set any required compile flags.  This will not be done if the user wants to
 # define all their own flags.
 if test $enable_setting_flags = yes; then
