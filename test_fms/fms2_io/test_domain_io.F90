@@ -46,7 +46,7 @@ program test_domain_read
   integer                               :: xhalo = 3           !< Number of halo points in X
   integer                               :: yhalo = 2           !< Number of halo points in Y
   integer                               :: nz = 2              !< Number of points in the z dimension
-  character(len=20)                     :: filename="test.nc"  !< Name of the file
+  character(len=25)                     :: filename="test.nc"  !< Name of the file
   logical                               :: use_edges=.false.   !< Use North and East domain positions
 
   integer                               :: ndim4               !< Number of points in dim4
