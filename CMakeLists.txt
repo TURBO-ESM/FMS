@@ -195,6 +195,7 @@ list(APPEND fms_fortran_src_files
 # Collect FMS C source files
 list(APPEND fms_c_src_files
   affinity/affinity.c
+  diag_manager/mppnccombine.c
   mosaic/create_xgrid.c
   mosaic/gradient_c2l.c
   mosaic/interp.c
@@ -346,7 +347,8 @@ foreach(kind ${kinds})
   target_compile_definitions(${libTgt} PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt} PRIVATE "${${kind}_defs}")
 
-  target_link_libraries(${libTgt} PUBLIC NetCDF::NetCDF_Fortran
+  target_link_libraries(${libTgt} PUBLIC NetCDF::NetCDF_C
+                                         NetCDF::NetCDF_Fortran
                                          MPI::MPI_Fortran)
 
   if(OpenMP_Fortran_FOUND)
