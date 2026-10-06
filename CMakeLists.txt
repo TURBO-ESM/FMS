@@ -67,6 +67,11 @@ option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"            
 option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
 
+if(CMAKE_Fortran_COMPILER_ID STREQUAL "LLVMFlang")
+  set(ENABLE_QUAD_PRECISION OFF)
+  message(WARNING "LLVM Flang does not support building FMS with QUAD_PRECISION!")
+endif()
+
 if(32BIT)
   list(APPEND kinds "r4")
 endif()
