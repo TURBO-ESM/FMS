@@ -1,6 +1,7 @@
 # Precision-based Fortran compiler flags
 set(r8_flags "-fdefault-real-8 -fdefault-double-8")
-set(r4_flags "-fdefault-real-4")
+# flang's default REAL is already 4 bytes, and flang has no -fdefault-real-4.
+set(r4_flags "")
 
 # LLVM Flang
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS}")
